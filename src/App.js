@@ -12,7 +12,7 @@ function App() {
       );
   } else {
       // create new detector
-      var barcodeDetector = new BarcodeDetector({
+      var barcodeDetector = new window.BarcodeDetector({
           formats: ['code_39', 'codabar', 'ean_13']
       });
 
