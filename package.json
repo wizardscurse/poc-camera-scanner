@@ -1,5 +1,6 @@
 {
   "name": "poc-barcode-scanner",
+  "homepage": "https://www.erosco.com/poc/poc-camera-scanner/build",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

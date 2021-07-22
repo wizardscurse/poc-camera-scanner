@@ -1,37 +1,52 @@
-import {useRef,useCallback,useEffect} from 'react'
+import {useRef,useCallback,useEffect,useState} from 'react'
 import Webcam from 'react-webcam';
 
+
+if (!('BarcodeDetector' in window)) {
+  console.log(
+    'Barcode Detector is not supported by this browser.'
+  );
+}
+else {
+  console.log('supported')
+}
+
+const barcodeDetector = new window.BarcodeDetector({
+  formats: ['code_39']
+});
+
 function App() {
-  const webcamRef = useRef()
+  const webcamRef = useRef(null)
+  const [imageSrc, setImageSrc] = useState('')
+  const [code, setCode] = useState('')
 
-
-  const capture = useCallback(() => {
-    const imageSrc = webcamRef?.current?.getScreenshot();
-    const img = document.createElement('img');
-    img.src = imageSrc
-    if (!('BarcodeDetector' in window)) {
-        console.log(
-            'Barcode Detector is not supported by this browser.'
-        );
-    } else {
-        // create new detector
-        var barcodeDetector = new window.BarcodeDetector({
-            formats: ['code_39', 'codabar', 'ean_13']
-        });
-  
-        barcodeDetector
-            .detect(img)
-            .then(barcodes => {
-                console.log({barcodes})
-            })
-            .catch(err => {
-                // console.log({err})
-            });
-    }
-  }, [webcamRef])
+  const capture = useCallback(
+    () => {
+      setImageSrc(webcamRef?.current?.getScreenshot())
+    },
+    [webcamRef],
+  )
 
   useEffect(() => {
-    setInterval(capture, 100);
+    const detector = async () => {
+      if ('BarcodeDetector' in window) {
+        try {
+          const img = document.getElementById('img')
+          const barcodes = await barcodeDetector.detect(img);
+          barcodes.forEach(barcodes => {
+            setCode(JSON.stringify(barcodes))
+          });
+        } catch (e) {
+          console.error('Barcode detection failed:', e);
+        }
+      }
+    }
+
+    detector()
+  }, [imageSrc])
+
+  useEffect(() => {
+    setInterval(capture, 1000);
 }, [capture]);
 
   return (
@@ -45,8 +60,8 @@ function App() {
               facingMode: 'environment'
           }}
       />
-      
-
+      <img id="img" src={imageSrc} />
+      {code}
     </div>
   );
 }
