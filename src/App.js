@@ -20,6 +20,22 @@ function App() {
   const [imageSrc, setImageSrc] = useState('')
   const [code, setCode] = useState('')
 
+  const [deviceId, setDeviceId] = useState();
+  const [devices, setDevices] = useState([]);
+
+  const handleDevices = useCallback(
+    mediaDevices =>
+      setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput")),
+    [setDevices]
+  );
+
+  useEffect(
+    () => {
+      navigator.mediaDevices.enumerateDevices().then(handleDevices);
+    },
+    [handleDevices]
+  );
+
   const capture = useCallback(
     () => {
       setImageSrc(webcamRef?.current?.getScreenshot())
@@ -49,19 +65,31 @@ function App() {
     setInterval(capture, 1000);
   }, [capture]);
 
-
-
   return (
     <div className="App">
     <input type="range"></input>
-      <Webcam
+    <select name="camera" id="camera" onChange={value => {
+      setDeviceId(value.target.value)
+    }}>
+      <option value={""}>select</option>
+      {devices.map((device, key) => (
+        <option value={device.deviceId}>{device.deviceId}</option>
+      ))}
+    </select>
+
+    {/* {devices.map((device, key) => (
+          <div>
+            <Webcam audio={false} videoConstraints={{ deviceId: device.deviceId }} />
+            {device.label || `Device ${key + 1}`}
+          </div>
+
+      ))} */}
+      {deviceId && <Webcam
           width={300}
           height={300}
           ref={webcamRef}
           screenshotFormat="image/png"
-          videoConstraints={{
-            exact: "environment"
-          }}
+          videoConstraints={{ deviceId }}
           onUserMedia={(mediaStream) => {
             const [track] = mediaStream.getVideoTracks();
             const capabilities = track.getCapabilities();
@@ -81,7 +109,7 @@ function App() {
               track.applyConstraints({advanced: [ {zoom: event.target.value} ]});
             }
           }}
-      />
+      />}
       <img id="img" src={imageSrc} />
       {code}
     </div>
