@@ -15,57 +15,6 @@ const barcodeDetector = new window.BarcodeDetector({
   formats: ['code_39', 'code_128', 'ean_8', 'ean_13', 'upc_a', 'upc_e']
 });
 
-const streamVideo = () => {
-
-  navigator.mediaDevices.getUserMedia({video: { pan: true, tilt: true, zoom: true }}).then(mediaStream => {
-    document.querySelector('video').srcObject = mediaStream;
-    const [track] = mediaStream.getVideoTracks();
-    const capabilities = track.getCapabilities();
-    const settings = track.getSettings();
-  
-    if (!('zoom' in settings)) {
-      return Promise.reject('Zoom is not supported by ' + track.label);
-    }
-
-    const input = document.querySelector('input[type="range"]');
-    console.log({input})
-    console.log({capabilities})
-    // Map zoom to a slider element.
-    input.min = capabilities?.zoom?.min || 1;
-    input.max = capabilities?.zoom?.max || 100;
-    input.step = capabilities.zoom.step;
-    input.value = settings.zoom;
-    input.oninput = function(event) {
-      track.applyConstraints({advanced: [ {zoom: event.target.value} ]});
-    }
-    // input.hidden = false;
-
-    
-
-    // track.applyConstraints({advanced: [ {zoom: 100} ]});
-  })
-
-  
-  // try {
-  //   // User is prompted to grant both camera and PTZ access in a single call.
-  //   // If camera doesn't support PTZ, it falls back to a regular camera prompt.
-  //   const stream = await navigator.mediaDevices.getUserMedia({
-  //     // Website asks to control camera PTZ as well without altering the
-  //     // current pan, tilt, and zoom settings.
-  //     video: { pan: true, tilt: true, zoom: true }
-  //   });
-  //   console.log({stream})
-  //   // Show camera video stream to user.
-  //   document.querySelector('#video').srcObject = stream;
-
-  // } catch (error) {
-  //   // User denies prompt or matching media is not available.
-  //   console.log(error);
-  // }
-}
-streamVideo()
-
-
 function App() {
   const webcamRef = useRef(null)
   const [imageSrc, setImageSrc] = useState('')
@@ -88,7 +37,7 @@ function App() {
             setCode(JSON.stringify(barcodes))
           });
         } catch (e) {
-          console.error('Barcode detection failed:', e);
+          setCode('not found');
         }
       }
     }
@@ -104,20 +53,36 @@ function App() {
 
   return (
     <div className="App">
+    <input type="range"></input>
       <Webcam
           width={300}
           height={300}
           ref={webcamRef}
           screenshotFormat="image/png"
           videoConstraints={{
-              facingMode: 'environment'
+            exact: "environment"
           }}
-          onUserMedia={(props) => {
-            console.log(props)
+          onUserMedia={(mediaStream) => {
+            const [track] = mediaStream.getVideoTracks();
+            const capabilities = track.getCapabilities();
+            const settings = track.getSettings();
+
+            if (!('zoom' in settings)) {
+              return Promise.reject('Zoom is not supported by ' + track.label);
+            }
+
+            const input = document.querySelector('input[type="range"]');
+            // Map zoom to a slider element.
+            input.min = capabilities?.zoom?.min || 1;
+            input.max = capabilities?.zoom?.max || 100;
+            input.step = capabilities.zoom.step;
+            input.value = settings.zoom;
+            input.oninput = function(event) {
+              track.applyConstraints({advanced: [ {zoom: event.target.value} ]});
+            }
           }}
       />
       <img id="img" src={imageSrc} />
-      <input type="range"></input>
       {code}
     </div>
   );
