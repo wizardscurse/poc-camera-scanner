@@ -1,84 +1,92 @@
-import {useRef,useCallback,useEffect,useState} from 'react'
-import Webcam from 'react-webcam';
+import { useRef, useCallback, useEffect, useState } from "react";
+import Webcam from "react-webcam";
+import moduleName from "./App.css";
 
-
-if (!('BarcodeDetector' in window)) {
-  console.log(
-    'Barcode Detector is not supported by this browser.'
-  );
-}
-else {
-  console.log('supported')
+if (!("BarcodeDetector" in window)) {
+  console.log("Barcode Detector is not supported by this browser.");
+} else {
+  console.log("supported");
 }
 
 const barcodeDetector = new window.BarcodeDetector({
-  formats: ['code_39', 'code_128', 'ean_8', 'ean_13', 'upc_a', 'upc_e']
+  formats: ["code_39", "code_128", "ean_8", "ean_13", "upc_a", "upc_e"],
 });
 
 function App() {
-  const webcamRef = useRef(null)
-  const [imageSrc, setImageSrc] = useState('')
-  const [code, setCode] = useState('')
+  const webcamRef = useRef(null);
+  const [imageSrc, setImageSrc] = useState("");
+  const [code, setCode] = useState("");
+  const [message, setMessage] = useState("");
 
   const [deviceId, setDeviceId] = useState();
   const [devices, setDevices] = useState([]);
 
   const handleDevices = useCallback(
-    mediaDevices =>
-      {
-        setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"))},
+    (mediaDevices) => {
+      setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
+    },
     [setDevices]
   );
 
-  useEffect(
-    () => {
-      navigator.mediaDevices.enumerateDevices().then(handleDevices);
-    },
-    [handleDevices]
-  );
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then(handleDevices);
+  }, [handleDevices]);
 
-  const capture = useCallback(
-    () => {
-      setImageSrc(webcamRef?.current?.getScreenshot())
-    },
-    [webcamRef],
-  )
+  const capture = useCallback(() => {
+    setImageSrc(webcamRef?.current?.getScreenshot());
+  }, [webcamRef]);
 
   useEffect(() => {
     const detector = async () => {
-      if ('BarcodeDetector' in window) {
+      if ("BarcodeDetector" in window) {
         try {
-          const img = document.getElementById('img')
+          const img = document.getElementById("img");
           const barcodes = await barcodeDetector.detect(img);
-          barcodes.forEach(barcodes => {
-            setCode(JSON.stringify(barcodes))
+          barcodes.forEach((barcodes) => {
+            setCode(JSON.stringify(barcodes));
           });
         } catch (e) {
-          setCode('not found');
+          setCode("not found");
         }
       }
-    }
+    };
 
-    detector()
-  }, [imageSrc])
+    detector();
+  }, [imageSrc]);
 
   useEffect(() => {
     setInterval(capture, 1000);
   }, [capture]);
-  console.log({devices})
+  console.log({ message });
   return (
     <div className="App">
-    <input type="range"></input>
-    <select name="camera" id="camera" onChange={value => {
-      setDeviceId(value.target.value)
-    }}>
-      <option value={""}>select</option>
-      {devices.map((device, key) => (
-        <option value={device.deviceId}>{device.deviceId}</option>
-      ))}
-    </select>
+      <input type="range"></input>
+      <select
+        name="camera"
+        id="camera"
+        onChange={(value) => {
+          setDeviceId(value.target.value);
+        }}
+      >
+        <option value={""}>select</option>
+        {devices.map((device, key) => (
+          <option value={device.deviceId}>{device.deviceId}</option>
+        ))}
+      </select>
 
-      {deviceId && <Webcam
+      <input
+        id="zoom-slider"
+        min="0"
+        max="0"
+        name="zoom"
+        title="Zoom"
+        type="range"
+        hidden
+      />
+      <output id="zoom-slider-value"></output>
+
+      {deviceId && (
+        <Webcam
           width={300}
           height={300}
           ref={webcamRef}
@@ -89,23 +97,54 @@ function App() {
             const capabilities = track.getCapabilities();
             const settings = track.getSettings();
 
-            if (!('zoom' in settings)) {
-              return Promise.reject('Zoom is not supported by ' + track.label);
+            const zoomSlider = document.getElementById("zoom-slider");
+            const zoomSliderValue =
+              document.getElementById("zoom-slider-value");
+
+            if (!("zoom" in settings)) {
+              setMessage((message) => {
+                return (
+                  message + "Zoom is not supported by " + track.label + "\n"
+                );
+              });
+              console.warn("Zoom is not supported by " + track.label);
+            } else {
+              // Map zoom to a slider element.
+              zoomSlider.min = capabilities.zoom.min;
+              zoomSlider.max = capabilities.zoom.max;
+              zoomSlider.step = capabilities.zoom.step;
+              zoomSlider.value = settings.zoom;
+              zoomSlider.oninput = (event) => {
+                zoomSliderValue.value = zoomSlider.value;
+                track.applyConstraints({
+                  advanced: [{ zoom: event.target.value }],
+                });
+              };
+              zoomSlider.parentElement.hidden = false;
             }
 
-            const input = document.querySelector('input[type="range"]');
-            // Map zoom to a slider element.
-            input.min = capabilities?.zoom?.min || 1;
-            input.max = capabilities?.zoom?.max || 100;
-            input.step = capabilities.zoom.step;
-            input.value = settings.zoom;
-            input.oninput = function(event) {
-              track.applyConstraints({advanced: [ {zoom: event.target.value} ]});
+            if (!("focusMode" in settings)) {
+              setMessage((message) => {
+                return (
+                  message +
+                  "FocusMode is not supported by " +
+                  track.label +
+                  "\n"
+                );
+              });
+              console.warn("FocusMode is not supported by " + track.label);
+            } else {
+              track.applyConstraints({
+                focusMode: "continuous",
+              });
             }
           }}
-      />}
-      <img id="img" src={imageSrc} hidden/>
+        />
+      )}
+
+      <img id="img" src={imageSrc} hidden />
       {code}
+      <textarea>{message}</textarea>
     </div>
   );
 }
