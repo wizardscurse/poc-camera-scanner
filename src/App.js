@@ -57,10 +57,9 @@ function App() {
   useEffect(() => {
     setInterval(capture, 1000);
   }, [capture]);
-  console.log({ message });
+
   return (
     <div className="App">
-      <input type="range"></input>
       <select
         name="camera"
         id="camera"
@@ -144,7 +143,7 @@ function App() {
 
       <img id="img" src={imageSrc} hidden />
       {code}
-      <textarea>{message}</textarea>
+      <p>{message}</p>
     </div>
   );
 }
