@@ -12,7 +12,7 @@ else {
 }
 
 const barcodeDetector = new window.BarcodeDetector({
-  formats: ['code_39']
+  formats: ['code_39', 'code_128', 'ean_8', 'ean_13', 'upc_a', 'upc_e']
 });
 
 function App() {
