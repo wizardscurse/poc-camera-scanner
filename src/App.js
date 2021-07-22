@@ -1,23 +1,44 @@
-import logo from './logo.svg';
-import './App.css';
+import {useRef} from 'react'
+import Webcam from 'react-webcam';
 
 function App() {
+  const webcamRef = useRef()
+  const imageSrc = webcamRef?.current?.getScreenshot();
+  const img = document.createElement('img');
+  img.src = imageSrc
+  if (!('BarcodeDetector' in window)) {
+      console.log(
+          'Barcode Detector is not supported by this browser.'
+      );
+  } else {
+      // create new detector
+      var barcodeDetector = new BarcodeDetector({
+          formats: ['code_39', 'codabar', 'ean_13']
+      });
+
+      barcodeDetector
+          .detect(img)
+          .then(barcodes => {
+              console.log({barcodes})
+          })
+          .catch(err => {
+              console.log({err})
+          });
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Webcam
+          width={300}
+          height={300}
+          ref={webcamRef}
+          screenshotFormat="image/png"
+          videoConstraints={{
+              facingMode: 'environment'
+          }}
+      />
+      
+
     </div>
   );
 }
