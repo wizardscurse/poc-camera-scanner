@@ -17,6 +17,7 @@ function App() {
   const [imageSrc, setImageSrc] = useState("");
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
+  const [messageSetiing, setMessageSetiing] = useState("");
 
   const [deviceId, setDeviceId] = useState();
   const [devices, setDevices] = useState([]);
@@ -95,7 +96,7 @@ function App() {
             const [track] = mediaStream.getVideoTracks();
             const capabilities = track.getCapabilities();
             const settings = track.getSettings();
-
+            setMessageSetiing(JSON.stringify(settings));
             const zoomSlider = document.getElementById("zoom-slider");
             const zoomSliderValue =
               document.getElementById("zoom-slider-value");
@@ -140,10 +141,13 @@ function App() {
           }}
         />
       )}
-
       <img id="img" src={imageSrc} hidden />
-      {code}
-      <p>{message}</p>
+      <div>Scan result</div>
+      <textarea value={code} />
+      <div>Message</div>
+      <textarea value={message} />
+      <div>Setting</div>
+      <textarea value={JSON.stringify(messageSetiing)} />
     </div>
   );
 }
