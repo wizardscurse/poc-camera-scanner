@@ -25,7 +25,8 @@ function App() {
 
   const handleDevices = useCallback(
     mediaDevices =>
-      setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput")),
+      {
+        setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"))},
     [setDevices]
   );
 
@@ -64,7 +65,7 @@ function App() {
   useEffect(() => {
     setInterval(capture, 1000);
   }, [capture]);
-
+  console.log({devices})
   return (
     <div className="App">
     <input type="range"></input>
@@ -77,13 +78,6 @@ function App() {
       ))}
     </select>
 
-    {/* {devices.map((device, key) => (
-          <div>
-            <Webcam audio={false} videoConstraints={{ deviceId: device.deviceId }} />
-            {device.label || `Device ${key + 1}`}
-          </div>
-
-      ))} */}
       {deviceId && <Webcam
           width={300}
           height={300}
@@ -110,7 +104,7 @@ function App() {
             }
           }}
       />}
-      <img id="img" src={imageSrc} />
+      <img id="img" src={imageSrc} hidden/>
       {code}
     </div>
   );
